@@ -9,6 +9,8 @@ use App\Models\Task;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
 
 class TaskController extends Controller
@@ -19,7 +21,8 @@ class TaskController extends Controller
     public function index()
     {
         try {
-            return TaskResource::collection(Task::paginate(10));
+            $tasks = Task::where('user_id', Auth::id())->paginate(10);
+            return TaskResource::collection($tasks);
         } catch (Exception $e) {
             Log::error("Tasks retrieval failed", ['error' => $e->getMessage()]);
 
@@ -35,7 +38,14 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request)
     {
         try {
-            $task = Task::create($request->validated());
+            $validatedTask = $request->validated();
+            if ($request->hasFile('attachment')) {
+                $filePath = $request->file('attachment')->store('attachment', config('filesystems.storage_disk'));
+                $validatedTask['attachment'] = $filePath;
+            }
+            $validatedTask['user_id'] = Auth::id();
+
+            $task = Task::create($validatedTask);
 
             return response()->json([
                 'message' => 'Task created successfully',
@@ -56,6 +66,8 @@ class TaskController extends Controller
     public function show(Task $task)
     {
         try {
+            Gate::authorize('view', $task);
+
             return response()->json([
                 'task' => new TaskResource($task)
             ], Response::HTTP_OK);
@@ -74,6 +86,14 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task)
     {
         try {
+            Gate::authorize('update', $task);
+            $validatedTask = $request->validated();
+
+            if ($request->hasFile('attachment')) {
+                $filePath = $request->file('attachment')->store('attachment', config('filesystems.storage_disk'));
+                $validatedTask['attachment'] = $filePath;
+            }
+
             $task->update($request->validated());
 
             return response()->json([
@@ -95,6 +115,7 @@ class TaskController extends Controller
     public function destroy(Task $task)
     {
         try {
+            Gate::authorize('delete', $task);
             $task->delete();
 
             return response()->json([

@@ -15,6 +15,10 @@ class Task extends Model
         'user_id',
     ];
 
+    protected $casts = [
+        'time' => 'datetime'
+    ];
+
     public function user()
     {
         return $this->belongsTo(User::class);
