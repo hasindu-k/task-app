@@ -68,6 +68,61 @@
             </div>
         </div>
 
+        <div id="editTaskModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+                <h2 class="text-xl font-bold mb-4">Edit Task</h2>
+                <form id="edit-task-form" method="POST" enctype="multipart/form-data" class="space-y-4">
+                    @csrf
+                    <input type="hidden" id="edit-taskId" name="taskId">
+                    <div class="text-red-500" id="editErrorMessage"></div>
+                    <div>
+                        <label for="edit-title" class="block text-sm font-medium text-gray-700">Title <span
+                                class="text-red-500">*</span></label>
+                        <input type="text" id="edit-title" name="title"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label for="edit-time" class="block text-sm font-medium text-gray-700">Due Date <span
+                                class="text-red-500">*</span></label>
+                        <input type="datetime-local" id="edit-time" name="time"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label for="edit-description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="edit-description" name="description" rows="3"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
+                    </div>
+                    <div>
+                        <label for="edit-status" class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="edit-status" name="status"
+                            class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                            <option value="Pending">Pending</option>
+                            <option value="In Progress">In Progress</option>
+                            <option value="Completed">Completed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="edit-attachment" class="block text-sm font-medium text-gray-700">Attachment (JPEG,
+                            PNG,
+                            JPG)</label>
+                        <input type="file" id="edit-attachment" name="attachment"
+                            accept="image/jpeg, image/png, image/jpg"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+
+                        <img id="edit-attachment-preview" src="" alt="Attachment Preview"
+                            class="hidden w-32 h-32 object-cover mt-2" />
+                        <a id="edit-attachment-link" href="#" target="_blank"
+                            class="hidden text-blue-600 underline"></a>
+                        <div class="text-red-500 invalid-feedback error-messages error_attachment"></div>
+                    </div>
+                    <button type="submit"
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Update Task</button>
+                </form>
+                <button onclick="closeEditTaskModal()"
+                    class="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Close</button>
+            </div>
+        </div>
+
         <div id="viewTaskModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
                 <h2 id="viewTaskTitle" class="text-xl font-bold mb-4"></h2>
@@ -160,7 +215,7 @@
                             </span>
                             <span class="ml-2">
                                 <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
-                                onclick="editTask('${task.id}')"></i>
+                                onclick="openEditTaskModal('${task.id}')"></i>
                                 <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
                                 onclick="deleteTask('${task.id}')"></i>
                             </span>
@@ -183,33 +238,16 @@
             $('#taskModal').addClass('hidden');
         }
 
-        function viewTask(taskId) {
+        function getTask(taskId, callback) {
             $.ajax({
                 url: `/api/tasks/${taskId}`,
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
-                    let task = response.task;
-
-                    $('#viewTaskTitle').text(task.title);
-                    $('#viewTaskDescription').text(task.description);
-                    $('#viewTaskTime').text(`Due: ${task.time}`);
-
-                    let statusLabel = $('#viewTaskStatus');
-                    statusLabel.text(task.status);
-                    statusLabel.removeClass().addClass(
-                        `px-2 py-1 text-xs font-medium ${
-                    task.status === 'Completed' ? 'bg-green-500 text-white' :
-                    task.status === 'In Progress' ? 'bg-yellow-500 text-white' :
-                    'bg-red-500 text-white'
-                }`
-                    );
-                    $('#viewTaskModal').removeClass('hidden');
-
+                    if (callback) callback(response.task);
                 },
                 error: function(xhr, status, error) {
                     console.error("Error fetching task:", error);
-
                     Swal.fire({
                         title: "Error!",
                         text: "Failed to fetch task details. Please try again later.",
@@ -218,8 +256,52 @@
                     });
                 }
             });
+        }
 
+        function viewTask(taskId) {
+            getTask(taskId, function(task) {
+                $('#viewTaskTitle').text(task.title);
+                $('#viewTaskDescription').text(task.description);
+                $('#viewTaskTime').text(`Due: ${task.time}`);
 
+                let statusLabel = $('#viewTaskStatus');
+                statusLabel.text(task.status);
+                statusLabel.removeClass().addClass(
+                    `px-2 py-1 text-xs font-medium ${
+                task.status === 'Completed' ? 'bg-green-500 text-white' :
+                task.status === 'In Progress' ? 'bg-yellow-500 text-white' :
+                'bg-red-500 text-white'
+            }`
+                );
+
+                $('#viewTaskModal').removeClass('hidden');
+            });
+        }
+
+        function openEditTaskModal(taskId) {
+            getTask(taskId, function(task) {
+                $('#edit-taskId').val(task.id);
+                $('#edit-title').val(task.title);
+                $('#edit-time').val(task.time);
+                $('#edit-description').val(task.description);
+                $('#edit-status').val(task.status);
+                console.log(task.attachment);
+
+                if (task.attachment) {
+                    let filePreview = $('#edit-attachment-preview');
+                    let fileDownloadLink = $('#edit-attachment-link');
+
+                    filePreview.attr('src', `${task.attachment}`).removeClass('hidden');
+                    fileDownloadLink.attr('href', `${task.attachment}`).text("Download Attachment")
+                        .removeClass('hidden');
+                }
+
+                $('#editTaskModal').removeClass('hidden');
+            });
+        }
+
+        function closeEditTaskModal() {
+            $('#editTaskModal').addClass('hidden');
         }
 
         function closeViewTaskModal() {
@@ -289,5 +371,43 @@
                 }
             });
         }
+
+        $('#edit-task-form').submit(function(event) {
+            event.preventDefault();
+
+            let taskId = $('#edit-taskId').val();
+            let formData = new FormData(this);
+
+            $.ajax({
+                url: `/api/tasks/${taskId}`,
+                method: 'PUT',
+                data: formData,
+                contentType: false,
+                processData: false,
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function(response) {
+                    Swal.fire({
+                        title: "Updated!",
+                        text: "Task updated successfully.",
+                        icon: "success",
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        closeEditTaskModal();
+                        loadTasks();
+                    });
+                },
+                error: function(xhr) {
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Failed to update task.",
+                        icon: "error",
+                        confirmButtonText: "OK"
+                    });
+                }
+            });
+        });
     </script>
 @endsection

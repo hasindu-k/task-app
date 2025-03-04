@@ -78,4 +78,5 @@ return [
     ],
 
     'storage_disk' => env('FILESYSTEM_DISK', 'public'),
+    'storage_url' => env('FILESYSTEM_URL'),
 ];

@@ -21,6 +21,7 @@ class TaskResource extends JsonResource
             'time' => $this->time->format('Y-m-d H:i:s'),
             'status' => $this->status,
             'user_id' => $this->user_id,
+            'attachment' => config('filesystems.storage_url') . $this->attachment,
             'created_at' => $this->created_at->format('Y-m-d H:i:s'),
             'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
         ];
