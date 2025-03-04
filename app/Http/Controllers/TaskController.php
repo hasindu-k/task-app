@@ -15,6 +15,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TaskController extends Controller
@@ -94,6 +95,9 @@ class TaskController extends Controller
             $validatedTask = $request->validated();
 
             if ($request->hasFile('attachment')) {
+                if (!empty($task->attachment) && Storage::disk(config('filesystems.storage_disk'))->exists($task->attachment)) {
+                    Storage::disk(config('filesystems.storage_disk'))->delete($task->attachment);
+                }
                 $filePath = $request->file('attachment')->store('attachment', config('filesystems.storage_disk'));
                 $validatedTask['attachment'] = $filePath;
             }
@@ -167,6 +171,26 @@ class TaskController extends Controller
 
             return response()->json([
                 'message' => 'Task deletion failed'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    public function download(Request $request)
+    {
+        try {
+            $filePath = urldecode($path);
+            $relativePath = str_replace(url('/storage/'), '', $filePath);
+
+            if (!Storage::exists("attachment/" . $relativePath)) {
+                return response()->json(['error' => 'File not found'], 404);
+            }
+
+            return response()->download(storage_path("app/public/attachment/" . $relativePath));
+        } catch (Exception $e) {
+            Log::error("File download failed", ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'message' => 'File download failed'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }

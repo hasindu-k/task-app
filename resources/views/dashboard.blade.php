@@ -80,17 +80,20 @@
                                 class="text-red-500">*</span></label>
                         <input type="text" id="edit-title" name="title"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <div class="text-red-500 invalid-feedback error-messages error_title"></div>
                     </div>
                     <div>
                         <label for="edit-time" class="block text-sm font-medium text-gray-700">Due Date <span
                                 class="text-red-500">*</span></label>
                         <input type="datetime-local" id="edit-time" name="time"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md">
+                        <div class="text-red-500 invalid-feedback error-messages error_time"></div>
                     </div>
                     <div>
                         <label for="edit-description" class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea id="edit-description" name="description" rows="3"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
+                        <div class="text-red-500 invalid-feedback error-messages error_description"></div>
                     </div>
                     <div>
                         <label for="edit-status" class="block text-sm font-medium text-gray-700">Status</label>
@@ -100,6 +103,7 @@
                             <option value="In Progress">In Progress</option>
                             <option value="Completed">Completed</option>
                         </select>
+                        <div class="text-red-500 invalid-feedback error-messages error_status"></div>
                     </div>
                     <div>
                         <label for="edit-attachment" class="block text-sm font-medium text-gray-700">Attachment (JPEG,
@@ -111,8 +115,6 @@
 
                         <img id="edit-attachment-preview" src="" alt="Attachment Preview"
                             class="hidden w-32 h-32 object-cover mt-2" />
-                        <a id="edit-attachment-link" href="#" target="_blank"
-                            class="hidden text-blue-600 underline"></a>
                         <div class="text-red-500 invalid-feedback error-messages error_attachment"></div>
                     </div>
                     <button type="submit"
@@ -125,10 +127,14 @@
 
         <div id="viewTaskModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
-                <h2 id="viewTaskTitle" class="text-xl font-bold mb-4"></h2>
-                <p id="viewTaskDescription" class="text-gray-700 mb-2"></p>
-                <p id="viewTaskTime" class="text-sm text-gray-500"></p>
-                <span id="viewTaskStatus" class="px-2 py-1 text-xs font-medium rounded-md"></span>
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="viewTaskTitle" class="text-2xl font-semibold text-gray-800 "></h2>
+                    <p id="viewTaskTime" class="text-sm text-gray-500"></p>
+                </div>
+                <p id="viewTaskDescription" class="text-gray-700 mt-3"></p>
+                <span id="viewTaskStatus" class="px-3 py-1 text-sm font-medium "></span>
+                <img id="viewTaskAttachment" src="" alt="Attachment Preview"
+                    class="hidden w-32 h-32 object-cover mt-2" />
                 <button onclick="closeViewTaskModal()"
                     class="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Close</button>
             </div>
@@ -262,17 +268,28 @@
             getTask(taskId, function(task) {
                 $('#viewTaskTitle').text(task.title);
                 $('#viewTaskDescription').text(task.description);
-                $('#viewTaskTime').text(`Due: ${task.time}`);
+
+                const taskTime = moment(task.time);
+                const now = moment();
+                const diff = taskTime.diff(now, 'days');
+
+                $('#viewTaskTime').text(diff > 0 ? `${diff} days left` : diff === 0 ? "Due today" :
+                    `Overdue by ${Math.abs(diff)} days`);
 
                 let statusLabel = $('#viewTaskStatus');
                 statusLabel.text(task.status);
                 statusLabel.removeClass().addClass(
-                    `px-2 py-1 text-xs font-medium ${
+                    `px-2 py-1 text-xs font-medium rounded-sm ${
                 task.status === 'Completed' ? 'bg-green-500 text-white' :
                 task.status === 'In Progress' ? 'bg-yellow-500 text-white' :
                 'bg-red-500 text-white'
             }`
                 );
+
+                if (task.attachment) {
+                    let filePreview = $('#viewTaskAttachment');
+                    filePreview.attr('src', `${task.attachment}`).removeClass('hidden');
+                }
 
                 $('#viewTaskModal').removeClass('hidden');
             });
@@ -285,15 +302,10 @@
                 $('#edit-time').val(task.time);
                 $('#edit-description').val(task.description);
                 $('#edit-status').val(task.status);
-                console.log(task.attachment);
 
                 if (task.attachment) {
                     let filePreview = $('#edit-attachment-preview');
-                    let fileDownloadLink = $('#edit-attachment-link');
-
                     filePreview.attr('src', `${task.attachment}`).removeClass('hidden');
-                    fileDownloadLink.attr('href', `${task.attachment}`).text("Download Attachment")
-                        .removeClass('hidden');
                 }
 
                 $('#editTaskModal').removeClass('hidden');
@@ -356,31 +368,17 @@
             });
         }
 
-        function editTask(taskId) {
-            $.ajax({
-                url: `/api/tasks/${taskId}`,
-                method: "PUT",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content'),
-                },
-                success: function() {
-                    loadTasks();
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error editing task:", error);
-                }
-            });
-        }
-
         $('#edit-task-form').submit(function(event) {
             event.preventDefault();
 
             let taskId = $('#edit-taskId').val();
             let formData = new FormData(this);
 
+            formData.append('_method', 'PUT');
+
             $.ajax({
                 url: `/api/tasks/${taskId}`,
-                method: 'PUT',
+                method: 'POST',
                 data: formData,
                 contentType: false,
                 processData: false,
@@ -400,12 +398,29 @@
                     });
                 },
                 error: function(xhr) {
-                    Swal.fire({
-                        title: "Error!",
-                        text: "Failed to update task.",
-                        icon: "error",
-                        confirmButtonText: "OK"
-                    });
+
+                    if (xhr.status === 422) {
+                        let errors = xhr.responseJSON.errors;
+                        let errorMessages = '';
+                        $('.error-messages').hide();
+                        for (let field in errors) {
+                            errorMessages = `<p>${errors[field].join(', ')}</p>`;
+                            $('.error_' + field).html(errorMessages).show();
+                        }
+                    } else {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            var message = response.message;
+                        } catch (e) {
+                            var message = ('An unexpected error occurred.');
+                        }
+                        Swal.fire({
+                            title: 'Error!',
+                            text: message,
+                            icon: 'error',
+                            confirmButtonText: 'OK'
+                        });
+                    }
                 }
             });
         });
