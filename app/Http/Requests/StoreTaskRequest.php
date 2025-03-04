@@ -23,8 +23,8 @@ class StoreTaskRequest extends FormRequest
     {
         return [
             'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'attachment' => 'nullable|file|mimes:jpeg,png,jpg',
+            'description' => 'nullable|string',
+            'attachment' => 'required|file|mimes:jpeg,png,jpg',
             'time' => 'required|date|after_or_equal:now',
             'status' => 'required|in:Pending,In Progress,Completed',
         ];

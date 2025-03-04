@@ -19,17 +19,23 @@
                 <form id="task-form" method="POST" class="space-y-4">
                     @csrf
                     <div>
-                        <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                        <label for="title" class="block text-sm font-medium text-gray-700">Title
+                            <span class="text-red-500">*</span></label>
                         <input type="text" id="title" name="title"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
+
+
                     </div>
                     <div>
-                        <label for="time" class="block text-sm font-medium text-gray-700">Time</label>
+                        <label for="time" class="block text-sm font-medium text-gray-700">Due Date
+                            <span class="text-red-500">*</span>
+                        </label>
                         <input type="datetime-local" id="time" name="time"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <div>
-                        <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <label for="description" class="block text-sm font-medium text-gray-700">Description
+                        </label>
                         <textarea id="description" name="description" rows="3"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500"></textarea>
                     </div>
@@ -41,6 +47,12 @@
                             <option value="In Progress">In Progress</option>
                             <option value="Completed">Completed</option>
                         </select>
+                    </div>
+                    <div>
+                        <label for="attachment" class="block text-sm font-medium text-gray-700">Attachment (JPEG, PNG,
+                            JPG)</label>
+                        <input type="file" id="attachment" name="attachment" accept="image/jpeg, image/png, image/jpg"
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                     </div>
                     <button type="submit"
                         class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Submit
@@ -137,27 +149,59 @@
 
     <script>
         function openTaskModal() {
-            document.getElementById('taskModal').classList.remove('hidden');
+            $('#taskModal').removeClass('hidden');
         }
 
         function closeTaskModal() {
-            document.getElementById('taskModal').classList.add('hidden');
+            $('#taskModal').addClass('hidden');
         }
 
         function viewTask(id, title, description, status, time) {
-            document.getElementById('viewTaskTitle').innerText = title;
-            document.getElementById('viewTaskDescription').innerText = description;
-            document.getElementById('viewTaskTime').innerText = `Due: ${time}`;
-            let statusLabel = document.getElementById('viewTaskStatus');
-            statusLabel.innerText = status;
-            statusLabel.className = status === 'Completed' ? 'bg-green-500 text-white px-2 py-1 text-xs font-medium' :
+            $('#viewTaskTitle').text(title);
+            $('#viewTaskDescription').text(description);
+            $('#viewTaskTime').text(`Due: ${time}`);
+
+            let statusLabel = $('#viewTaskStatus');
+            statusLabel.text(status);
+            statusLabel.removeClass().addClass(
+                status === 'Completed' ? 'bg-green-500 text-white px-2 py-1 text-xs font-medium' :
                 status === 'In Progress' ? 'bg-yellow-500 text-white px-2 py-1 text-xs font-medium' :
-                'bg-red-500 text-white px-2 py-1 text-xs font-medium';
-            document.getElementById('viewTaskModal').classList.remove('hidden');
+                'bg-red-500 text-white px-2 py-1 text-xs font-medium'
+            );
+
+            $('#viewTaskModal').removeClass('hidden');
         }
 
         function closeViewTaskModal() {
-            document.getElementById('viewTaskModal').classList.add('hidden');
+            $('#viewTaskModal').addClass('hidden');
+        }
+
+        function deleteTask(taskId) {
+            fetch(`/api/tasks/${taskId}`, {
+                method: "DELETE",
+                headers: {
+                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content'),
+                    "Content-Type": "application/json",
+                },
+            }).then((response) => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
+        }
+
+        function editTask(taskId) {
+            fetch(`/api/tasks/${taskId}`, {
+                method: "PUT",
+                headers: {
+                    "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
+                    "Content-Type": "application/json",
+                },
+            }).then((response) => {
+                if (response.ok) {
+                    window.location.reload();
+                }
+            });
         }
     </script>
 @endsection

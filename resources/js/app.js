@@ -2,6 +2,7 @@ import "./bootstrap";
 
 import Alpine from "alpinejs";
 import $ from "jquery";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 window.Alpine = Alpine;
 
@@ -21,10 +22,16 @@ $(document).ready(function () {
             } else {
                 tasks.forEach((task) => {
                     taskList.append(`
-                    <li class="flex justify-between items-center bg-gray-100 p-3 rounded-md shadow-sm">
-                        <span class="text-lg font-semibold text-gray-800 cursor-pointer"
-                              onclick="viewTask('${task.id}', '${task.title}', '${task.description}', '${task.status}', '${task.time}')">
+                    <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
+                        <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
+                            onclick="viewTask('${task.id}', '${task.title}', '${task.description}', '${task.status}', '${task.time}')">
                             ${task.title}
+                        </span>
+                        <span class="ml-2">
+                            <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
+                            onclick="editTask('${task.id}')"></i>
+                            <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
+                            onclick="deleteTask('${task.id}')"></i>
                         </span>
                     </li>
                 `);
@@ -48,6 +55,7 @@ $(document).ready(function () {
             success: function () {
                 $("#task-form")[0].reset();
                 loadTasks();
+                closeTaskModal();
             },
         });
     });
