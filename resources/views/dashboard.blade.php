@@ -249,7 +249,10 @@
 
                     tasks.forEach((task) => {
                         taskList.append(`
-                    <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
+                        <li class="flex items-center p-3 rounded-md shadow-sm
+                            ${task.status === 'Completed' ? 'bg-green-100' :
+                            task.status === 'In Progress' ? 'bg-yellow-100' :
+                            task.status === 'Pending' ? 'bg-red-100' : 'bg-gray-100'}">
                         <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
                             onclick="viewTask('${task.id}')">
                             ${task.title}
