@@ -1,16 +1,12 @@
-@extends('layouts.master')
+<x-app-layout>
+    <x-slot name="header">
+        <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
+            {{ __('Profile') }}
+        </h2>
+    </x-slot>
 
-@section('title', 'Dashboard')
-
-@section('content')
-    <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg">
-        <div class="flex justify-between items-center mb-4">
-            <h2 class="flex-grow text-center text-2xl font-bold">Task Management System</h2>
-            <div class="ml-2"><button onclick="openUserMenuModal()"
-                    class="ml-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900">
-                    Open Menu
-                </button></div>
-        </div>
+    <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg py-12 mt-4">
+        <h2 class="flex-grow text-center text-2xl mb-4 font-bold">Task Management System</h2>
 
         <button onclick="openTaskModal()"
             class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Add
@@ -63,7 +59,8 @@
                     <div>
                         <label for="attachment" class="block text-sm font-medium text-gray-700">Attachment (JPEG, PNG,
                             JPG)</label>
-                        <input type="file" id="attachment" name="attachment" accept="image/jpeg, image/png, image/jpg"
+                        <input type="file" id="attachment" name="attachment"
+                            accept="image/jpeg, image/png, image/jpg"
                             class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500">
                         <div class="text-red-500 invalid-feedback error-messages error_attachment"></div>
                     </div>
@@ -98,7 +95,8 @@
                         <div class="text-red-500 invalid-feedback error-messages error_time"></div>
                     </div>
                     <div>
-                        <label for="edit-description" class="block text-sm font-medium text-gray-700">Description</label>
+                        <label for="edit-description"
+                            class="block text-sm font-medium text-gray-700">Description</label>
                         <textarea id="edit-description" name="description" rows="3"
                             class="mt-1 block w-full p-2 border border-gray-300 rounded-md"></textarea>
                         <div class="text-red-500 invalid-feedback error-messages error_description"></div>
@@ -134,7 +132,8 @@
             </div>
         </div>
 
-        <div id="viewTaskModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
+        <div id="viewTaskModal"
+            class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
                 <div class="flex justify-between items-center mb-4">
                     <h2 id="viewTaskTitle" class="text-2xl font-semibold text-gray-800 "></h2>
@@ -149,7 +148,8 @@
             </div>
         </div>
 
-        <div id="userMenuModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+        <div id="userMenuModal"
+            class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm relative">
 
                 <button onclick="closeUserMenuModal()"
@@ -503,4 +503,4 @@
             });
         });
     </script>
-@endsection
+</x-app-layout>
