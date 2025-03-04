@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.master')
 
 @section('title', 'Dashboard')
 
@@ -6,7 +6,10 @@
     <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg">
         <div class="flex justify-between items-center mb-4">
             <h2 class="flex-grow text-center text-2xl font-bold">Task Management System</h2>
-            <div class="ml-2"></div>
+            <div class="ml-2"><button onclick="openUserMenuModal()"
+                    class="ml-2 bg-gray-800 text-white px-4 py-2 rounded-md hover:bg-gray-900">
+                    Open Menu
+                </button></div>
         </div>
 
         <button onclick="openTaskModal()"
@@ -143,6 +146,29 @@
                     class="hidden w-32 h-32 object-cover mt-2" />
                 <button onclick="closeViewTaskModal()"
                     class="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Close</button>
+            </div>
+        </div>
+
+        <div id="userMenuModal" class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center">
+            <div class="bg-white p-6 rounded-lg shadow-lg w-full max-w-sm relative">
+
+                <button onclick="closeUserMenuModal()"
+                    class="absolute top-3 right-3 bg-red-400 text-white p-2 rounded-full hover:bg-red-500 transition">
+                    ✖
+                </button>
+
+                <h2 class="text-lg font-semibold text-gray-800 mb-4 text-center">User Menu</h2>
+                <a href="{{ route('profile.edit') }}"
+                    class="w-full bg-indigo-500 text-white py-2 px-4 rounded-md hover:bg-indigo-600 transition mb-2">
+                    Profile
+                </a>
+                <form method="POST" action="{{ route('logout') }}">
+                    @csrf
+                    <button type="submit"
+                        class="w-full bg-red-400 text-white py-2 px-4 rounded-md hover:bg-red-500 transition">
+                        Logout
+                    </button>
+                </form>
             </div>
         </div>
 
@@ -286,6 +312,14 @@
 
         function closeTaskModal() {
             $('#taskModal').addClass('hidden');
+        }
+
+        function openUserMenuModal() {
+            $('#userMenuModal').removeClass('hidden');
+        }
+
+        function closeUserMenuModal() {
+            $('#userMenuModal').addClass('hidden');
         }
 
         function getTask(taskId, callback) {
