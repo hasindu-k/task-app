@@ -7,11 +7,15 @@ use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
 use App\Models\Task;
 use Exception;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class TaskController extends Controller
 {
@@ -121,6 +125,43 @@ class TaskController extends Controller
             return response()->json([
                 'message' => 'Task deleted successfully'
             ], Response::HTTP_OK);
+        } catch (AuthorizationException $e) {
+            Log::warning("Unauthorized task deletion attempt", [
+                'error' => $e->getMessage(),
+                'user_id' => auth()->id(),
+                'task_id' => $task->id
+            ]);
+
+            return response()->json([
+                'message' => 'You are not authorized to delete this task.'
+            ], Response::HTTP_FORBIDDEN);
+        } catch (ModelNotFoundException $e) {
+            Log::error("Task not found", [
+                'error' => $e->getMessage(),
+                'task_id' => $task->id
+            ]);
+
+            return response()->json([
+                'message' => 'Task not found.'
+            ], Response::HTTP_NOT_FOUND);
+        } catch (QueryException $e) {
+            Log::error("Database error during task deletion", [
+                'error' => $e->getMessage(),
+                'task_id' => $task->id
+            ]);
+
+            return response()->json([
+                'message' => 'Database error occurred while deleting the task.'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
+        } catch (NotFoundHttpException $e) {
+            Log::error("Task deletion failed - Task does not exist", [
+                'error' => $e->getMessage(),
+                'task_id' => $task->id
+            ]);
+
+            return response()->json([
+                'message' => 'Task not found.'
+            ], Response::HTTP_NOT_FOUND);
         } catch (Exception $e) {
             Log::error("Task deletion failed", ['error' => $e->getMessage()]);
 

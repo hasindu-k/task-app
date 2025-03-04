@@ -73,7 +73,7 @@
                 <h2 id="viewTaskTitle" class="text-xl font-bold mb-4"></h2>
                 <p id="viewTaskDescription" class="text-gray-700 mb-2"></p>
                 <p id="viewTaskTime" class="text-sm text-gray-500"></p>
-                <span id="viewTaskStatus" class="px-2 py-1 text-xs font-medium"></span>
+                <span id="viewTaskStatus" class="px-2 py-1 text-xs font-medium rounded-md"></span>
                 <button onclick="closeViewTaskModal()"
                     class="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Close</button>
             </div>
@@ -83,46 +83,6 @@
 
     <script>
         $(document).ready(function() {
-            function loadTasks() {
-                $.ajax({
-                    url: "/api/tasks",
-                    method: "GET",
-                    dataType: "json",
-                    success: function(response) {
-                        let tasks = response.data;
-                        let taskList = $("#task-titles-list");
-                        taskList.empty();
-
-                        if (tasks.length === 0) {
-                            taskList.append(
-                                '<li class="text-gray-500 text-center">No tasks found</li>'
-                            );
-                        } else {
-                            tasks.forEach((task) => {
-                                taskList.append(`
-                        <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
-                            <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
-                                onclick="viewTask('${task.id}', '${task.title}', '${task.description}', '${task.status}', '${task.time}')">
-                                ${task.title}
-                            </span>
-                            <span class="ml-2">
-                                <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
-                                onclick="editTask('${task.id}')"></i>
-                                <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
-                                onclick="deleteTask('${task.id}')"></i>
-                            </span>
-                        </li>
-                    `);
-                            });
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error("Error fetching tasks:", error);
-                    }
-                });
-            }
-
-
             loadTasks();
 
             $("#task-form").submit(function(e) {
@@ -137,8 +97,16 @@
                     contentType: false,
                     success: function() {
                         $("#task-form")[0].reset();
-                        loadTasks();
                         closeTaskModal();
+                        Swal.fire({
+                            title: "Created!",
+                            text: "The task has been created.",
+                            icon: "success",
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            loadTasks();
+                        });
                     },
                     error: function(xhr, status, error) {
                         if (xhr.status === 422) {
@@ -168,6 +136,45 @@
             });
         });
 
+        function loadTasks() {
+            $.ajax({
+                url: "/api/tasks",
+                method: "GET",
+                dataType: "json",
+                success: function(response) {
+                    let tasks = response.data;
+                    let taskList = $("#task-titles-list");
+                    taskList.empty();
+
+                    if (tasks.length === 0) {
+                        taskList.append(
+                            '<li class="text-gray-500 text-center">No tasks found</li>'
+                        );
+                    } else {
+                        tasks.forEach((task) => {
+                            taskList.append(`
+                        <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
+                            <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
+                                onclick="viewTask('${task.id}')">
+                                ${task.title}
+                            </span>
+                            <span class="ml-2">
+                                <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
+                                onclick="editTask('${task.id}')"></i>
+                                <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
+                                onclick="deleteTask('${task.id}')"></i>
+                            </span>
+                        </li>
+                    `);
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching tasks:", error);
+                }
+            });
+        }
+
         function openTaskModal() {
             $('#taskModal').removeClass('hidden');
         }
@@ -176,20 +183,43 @@
             $('#taskModal').addClass('hidden');
         }
 
-        function viewTask(id, title, description, status, time) {
-            $('#viewTaskTitle').text(title);
-            $('#viewTaskDescription').text(description);
-            $('#viewTaskTime').text(`Due: ${time}`);
+        function viewTask(taskId) {
+            $.ajax({
+                url: `/api/tasks/${taskId}`,
+                method: "GET",
+                dataType: "json",
+                success: function(response) {
+                    let task = response.task;
 
-            let statusLabel = $('#viewTaskStatus');
-            statusLabel.text(status);
-            statusLabel.removeClass().addClass(
-                status === 'Completed' ? 'bg-green-500 text-white px-2 py-1 text-xs font-medium' :
-                status === 'In Progress' ? 'bg-yellow-500 text-white px-2 py-1 text-xs font-medium' :
-                'bg-red-500 text-white px-2 py-1 text-xs font-medium'
-            );
+                    $('#viewTaskTitle').text(task.title);
+                    $('#viewTaskDescription').text(task.description);
+                    $('#viewTaskTime').text(`Due: ${task.time}`);
 
-            $('#viewTaskModal').removeClass('hidden');
+                    let statusLabel = $('#viewTaskStatus');
+                    statusLabel.text(task.status);
+                    statusLabel.removeClass().addClass(
+                        `px-2 py-1 text-xs font-medium ${
+                    task.status === 'Completed' ? 'bg-green-500 text-white' :
+                    task.status === 'In Progress' ? 'bg-yellow-500 text-white' :
+                    'bg-red-500 text-white'
+                }`
+                    );
+                    $('#viewTaskModal').removeClass('hidden');
+
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error fetching task:", error);
+
+                    Swal.fire({
+                        title: "Error!",
+                        text: "Failed to fetch task details. Please try again later.",
+                        icon: "error",
+                        confirmButtonText: "OK"
+                    });
+                }
+            });
+
+
         }
 
         function closeViewTaskModal() {
@@ -197,17 +227,49 @@
         }
 
         function deleteTask(taskId) {
-            $.ajax({
-                url: `/api/tasks/${taskId}`,
-                method: "DELETE",
-                headers: {
-                    "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content'),
-                },
-                success: function() {
-                    window.location.reload();
-                },
-                error: function(xhr, status, error) {
-                    console.error("Error deleting task:", error);
+            Swal.fire({
+                title: "Are you sure?",
+                text: "You won't be able to recover this task!",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "Yes, delete it!"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `/api/tasks/${taskId}`,
+                        method: "DELETE",
+                        headers: {
+                            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content'),
+                        },
+                        success: function() {
+                            Swal.fire({
+                                title: "Deleted!",
+                                text: "The task has been deleted.",
+                                icon: "success",
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                loadTasks();
+                            });
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error deleting task:", error);
+                            try {
+                                const response = JSON.parse(xhr.responseText);
+                                var message = response.message;
+                            } catch (e) {
+                                var message = ('An unexpected error occurred.');
+                            }
+                            Swal.fire({
+                                title: "Error!",
+                                text: message,
+                                icon: "error",
+                                confirmButtonText: "OK"
+                            });
+                        }
+                    });
                 }
             });
         }
@@ -220,7 +282,7 @@
                     "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content'),
                 },
                 success: function() {
-                    window.location.reload();
+                    loadTasks();
                 },
                 error: function(xhr, status, error) {
                     console.error("Error editing task:", error);
