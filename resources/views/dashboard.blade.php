@@ -4,7 +4,10 @@
 
 @section('content')
     <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg">
-        <h2 class="text-center text-2xl font-bold mb-4">Task Management System</h2>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="flex-grow text-center text-2xl font-bold">Task Management System</h2>
+            <div class="ml-2"></div>
+        </div>
 
         <button onclick="openTaskModal()"
             class="w-full bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">Add
@@ -12,6 +15,8 @@
 
         <ul id="task-titles-list" class="space-y-3 mt-4">
         </ul>
+
+        <div id="pagination" class="flex justify-center space-x-2 mt-4"></div>
 
         <div id="taskModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center">
             <div class="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
@@ -118,7 +123,8 @@
                         <div class="text-red-500 invalid-feedback error-messages error_attachment"></div>
                     </div>
                     <button type="submit"
-                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Update Task</button>
+                        class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700">Update
+                        Task</button>
                 </form>
                 <button onclick="closeEditTaskModal()"
                     class="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600">Close</button>
@@ -197,43 +203,81 @@
             });
         });
 
-        function loadTasks() {
+        function loadTasks(page = 1) {
             $.ajax({
-                url: "/api/tasks",
+                url: `/api/tasks?page=${page}`,
                 method: "GET",
                 dataType: "json",
                 success: function(response) {
                     let tasks = response.data;
                     let taskList = $("#task-titles-list");
+                    let paginationContainer = $("#pagination");
+
                     taskList.empty();
+                    paginationContainer.empty();
 
                     if (tasks.length === 0) {
-                        taskList.append(
-                            '<li class="text-gray-500 text-center">No tasks found</li>'
-                        );
-                    } else {
-                        tasks.forEach((task) => {
-                            taskList.append(`
-                        <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
-                            <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
-                                onclick="viewTask('${task.id}')">
-                                ${task.title}
-                            </span>
-                            <span class="ml-2">
-                                <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
-                                onclick="openEditTaskModal('${task.id}')"></i>
-                                <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
-                                onclick="deleteTask('${task.id}')"></i>
-                            </span>
-                        </li>
-                    `);
-                        });
+                        taskList.append('<li class="text-gray-500 text-center">No tasks found</li>');
+                        return;
                     }
+
+                    tasks.forEach((task) => {
+                        taskList.append(`
+                    <li class="flex items-center bg-gray-100 p-3 rounded-md shadow-sm">
+                        <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
+                            onclick="viewTask('${task.id}')">
+                            ${task.title}
+                        </span>
+                        <span class="ml-2">
+                            <i class="fas fa-edit text-blue-500 cursor-pointer hover:text-blue-700"
+                            onclick="openEditTaskModal('${task.id}')"></i>
+                            <i class="fas fa-trash-alt text-red-500 cursor-pointer hover:text-red-700 ml-2"
+                            onclick="deleteTask('${task.id}')"></i>
+                        </span>
+                    </li>
+                `);
+                    });
+
+                    renderPagination(response.meta);
                 },
                 error: function(xhr, status, error) {
                     console.error("Error fetching tasks:", error);
                 }
             });
+        }
+
+        function renderPagination(meta) {
+            let paginationContainer = $("#pagination");
+
+            if (meta.last_page > 1) {
+                if (meta.current_page > 1) {
+                    paginationContainer.append(
+                        `<button onclick="loadTasks(${meta.current_page - 1})"
+                class="px-3 py-1 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 mr-1">
+                    Prev
+                </button>`
+                    );
+                }
+
+                for (let i = 1; i <= meta.last_page; i++) {
+                    paginationContainer.append(
+                        `<button onclick="loadTasks(${i})"
+                class="px-3 py-1 ${meta.current_page === i ? 'bg-blue-500 text-white' : 'bg-gray-300 text-gray-800'}
+                rounded-md hover:bg-gray-400 mx-1">
+                    ${i}
+                </button>`
+                    );
+                }
+
+                if (meta.current_page < meta.last_page) {
+                    paginationContainer.append(
+                        `<button onclick="loadTasks(${meta.current_page + 1})"
+                class="px-3 py-1 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400 ml-1">
+                    Next
+                </button>`
+                    );
+                }
+            }
         }
 
         function openTaskModal() {
