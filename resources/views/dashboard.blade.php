@@ -1,11 +1,11 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight">
-            {{ __('Profile') }}
+            {{ __('Dashboard') }}
         </h2>
     </x-slot>
 
-    <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg py-12 mt-4">
+    <div class="container mx-auto max-w-3xl bg-white p-6 rounded-lg shadow-lg py-8 my-4">
         <h2 class="flex-grow text-center text-2xl mb-4 font-bold">Task Management System</h2>
 
         <button onclick="openTaskModal()"
@@ -139,7 +139,7 @@
                     <h2 id="viewTaskTitle" class="text-2xl font-semibold text-gray-800 "></h2>
                     <p id="viewTaskTime" class="text-sm text-gray-500"></p>
                 </div>
-                <p id="viewTaskDescription" class="text-gray-700 mt-3"></p>
+                <p id="viewTaskDescription" class="text-gray-700 mt-3 w-full"></p>
                 <span id="viewTaskStatus" class="px-3 py-1 text-sm font-medium "></span>
                 <img id="viewTaskAttachment" src="" alt="Attachment Preview"
                     class="hidden w-32 h-32 object-cover mt-2" />
@@ -253,7 +253,7 @@
                             ${task.status === 'Completed' ? 'bg-green-100' :
                             task.status === 'In Progress' ? 'bg-yellow-100' :
                             task.status === 'Pending' ? 'bg-red-100' : 'bg-gray-100'}">
-                        <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer"
+                        <span class="text-lg flex-grow font-semibold text-gray-800 cursor-pointer truncate max-w-[90%]"
                             onclick="viewTask('${task.id}')">
                             ${task.title}
                         </span>
