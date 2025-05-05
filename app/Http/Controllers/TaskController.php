@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\StoreTaskRequest;
 use App\Http\Requests\UpdateTaskRequest;
 use App\Http\Resources\TaskResource;
+use App\Mail\OverdueMail;
 use App\Models\Task;
+use App\Models\User;
 use Exception;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -15,6 +17,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
@@ -26,7 +29,7 @@ class TaskController extends Controller
     public function index()
     {
         try {
-            $tasks = Task::where('user_id', Auth::id())->paginate(10);
+            $tasks = Task::where('user_id', Auth::id())->orderBy('created_at', 'desc')->paginate(10);
             return TaskResource::collection($tasks);
         } catch (Exception $e) {
             Log::error("Tasks retrieval failed", ['error' => $e->getMessage()]);
@@ -193,5 +196,27 @@ class TaskController extends Controller
                 'message' => 'File download failed'
             ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    public function sendOverDueMails()
+    {
+        try {
+            $user = Auth::user();
+
+            $tasks = Task::where('time', '<', now())->where('user_id', $user->id)->get();
+
+            if ($tasks->isEmpty()) {
+                return;
+            }
+
+            Mail::to($user->email)->send(new OverdueMail($user->name, $tasks));
+        } catch (Exception $e) {
+            Log::error("Mail send failed", ['error' => $e->getMessage()]);
+        }
+    }
+
+    public function getCompletedTaskByEach()
+    {
+        return User::with('tasks')->where('status', 'Completed')->count();
     }
 }
